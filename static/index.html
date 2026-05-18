@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hengli Crossover</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --border: #e1e4e8;
+    --text: #1f2328;
+    --muted: #656d76;
+    --accent: #0969da;
+    --accent-hover: #0860c4;
+    --good: #1a7f37;
+    --warn: #9a6700;
+    --bad: #cf222e;
+    --chip-bg: #f0f2f5;
+    --code-bg: #f6f8fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    font-size: 14px; line-height: 1.5;
+  }
+  header {
+    background: var(--panel); border-bottom: 1px solid var(--border);
+    padding: 16px 24px; display: flex; align-items: center; gap: 16px;
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; padding: 16px; margin-bottom: 16px;
+  }
+  .card h2 {
+    margin: 0 0 12px; font-size: 14px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
+  }
+
+  /* Input */
+  .input-row { display: flex; gap: 8px; align-items: stretch; }
+  input[type="text"] {
+    flex: 1; padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px; background: var(--code-bg);
+  }
+  input[type="text"]:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  button {
+    padding: 10px 16px; border: 1px solid var(--accent); background: var(--accent);
+    color: white; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-weight: 500;
+  }
+  button:hover { background: var(--accent-hover); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secondary {
+    background: var(--panel); color: var(--text); border-color: var(--border);
+  }
+  button.secondary:hover { background: var(--chip-bg); }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+
+  /* History */
+  .history-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .history-chip {
+    background: var(--chip-bg); border: 1px solid var(--border); border-radius: 4px;
+    padding: 4px 8px; font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 12px; cursor: pointer;
+  }
+  .history-chip:hover { background: #e6e8eb; }
+  .history-empty { color: var(--muted); font-size: 13px; }
+
+  /* Decoded specs */
+  .specs-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px 16px;
+  }
+  .spec-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+  .spec-key { color: var(--muted); font-size: 12px; }
+  .spec-val { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 13px; }
+
+  /* Mapping line */
+  .mapping {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-size: 15px; padding: 8px 0;
+  }
+  .mapping .arrow { color: var(--muted); }
+  .pill {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    background: var(--chip-bg); border: 1px solid var(--border);
+    font-family: ui-monospace, SFMono-Regular, monospace; font-size: 13px;
+  }
+  .pill.hengli { background: #ddf4ff; border-color: #54aeff; color: #0550ae; }
+  .rationale { color: var(--muted); font-size: 13px; margin-top: 8px; }
+
+  /* Match cards */
+  .matches-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 12px;
+  }
+  .match-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px; display: flex; flex-direction: column;
+  }
+  .match-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 8px; }
+  .match-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .part-number {
+    font-family: ui-monospace, SFMono-Regular, monospace; font-size: 15px;
+    font-weight: 600; margin-top: 2px; word-break: break-all;
+  }
+  .copy-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    padding: 4px 8px; font-size: 11px; border-radius: 4px; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .copy-btn:hover { background: var(--chip-bg); color: var(--text); }
+  .copy-btn.copied { color: var(--good); border-color: var(--good); }
+
+  .badge-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .badge {
+    padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
+    border: 1px solid;
+  }
+  .badge.score-high { background: #dafbe1; border-color: #2da44e; color: #1a7f37; }
+  .badge.score-mid  { background: #fff8c5; border-color: #d4a72c; color: #9a6700; }
+  .badge.score-low  { background: #ffebe9; border-color: #ff8182; color: #cf222e; }
+  .badge.fit { background: var(--chip-bg); border-color: var(--border); color: var(--text); }
+
+  .specs-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+  .specs-table th, .specs-table td {
+    text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border);
+  }
+  .specs-table th { color: var(--muted); font-weight: 500; font-size: 11px; }
+  .specs-table td.num { text-align: right; font-family: ui-monospace, SFMono-Regular, monospace; }
+
+  .codes-block { margin-top: 10px; font-size: 12px; }
+  .codes-block .code-line { display: flex; justify-content: space-between; padding: 2px 0; }
+  .codes-block .code-line .k { color: var(--muted); }
+  .codes-block .code-line .v { font-family: ui-monospace, SFMono-Regular, monospace; }
+
+  .caveats { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--warn); }
+  .caveats div { margin-top: 2px; }
+
+  /* Warnings */
+  .warning-list { font-size: 13px; color: var(--warn); }
+  .warning-list > div { padding: 4px 0; }
+
+  /* Toolbar */
+  .toolbar { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+
+  /* Loading */
+  .loading { color: var(--muted); padding: 20px; text-align: center; }
+
+  /* Section headers inside results */
+  .section-label {
+    font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.04em; margin: 16px 0 8px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .section-label:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  .error-banner {
+    background: #ffebe9; border: 1px solid #ff8182; color: var(--bad);
+    padding: 10px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Hengli Orbital Motor Crossover</h1>
+  <span class="sub">Competitor model code → Hengli equivalent</span>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Lookup</h2>
+    <div class="input-row">
+      <input type="text" id="codeInput" placeholder="e.g. M02049AC02AA0100010000000AAAAF" autocomplete="off" spellcheck="false" />
+      <button id="lookupBtn">Cross Over</button>
+    </div>
+    <div class="hint">Supports Char-Lynn (Eaton) 2000 Series (M02...) and T Series (MT0...). Spaces / dashes OK.</div>
+  </div>
+
+  <div class="card" id="historyCard">
+    <h2>Recent Lookups</h2>
+    <div id="historyList" class="history-list"></div>
+  </div>
+
+  <div id="results"></div>
+</main>
+
+<script>
+// ============================================================================
+// State
+// ============================================================================
+const HISTORY_KEY = "hengli_crossover_history";
+const HISTORY_MAX = 20;
+let lastResult = null;
+
+// ============================================================================
+// History (localStorage)
+// ============================================================================
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+  catch { return []; }
+}
+function saveHistory(items) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(items));
+}
+function addToHistory(code) {
+  let items = loadHistory();
+  items = items.filter(c => c !== code);
+  items.unshift(code);
+  if (items.length > HISTORY_MAX) items = items.slice(0, HISTORY_MAX);
+  saveHistory(items);
+  renderHistory();
+}
+function renderHistory() {
+  const items = loadHistory();
+  const el = document.getElementById("historyList");
+  if (!items.length) {
+    el.innerHTML = '<span class="history-empty">No lookups yet.</span>';
+    return;
+  }
+  el.innerHTML = items.map(c =>
+    `<span class="history-chip" data-code="${escapeHtml(c)}">${escapeHtml(c)}</span>`
+  ).join("");
+  el.querySelectorAll(".history-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      document.getElementById("codeInput").value = chip.dataset.code;
+      runLookup();
+    });
+  });
+}
+
+// ============================================================================
+// Utilities
+// ============================================================================
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function fmt(v, suffix = "") {
+  if (v === null || v === undefined || v === "") return "—";
+  return `${v}${suffix}`;
+}
+function scoreBadgeClass(score) {
+  if (score >= 70) return "score-high";
+  if (score >= 50) return "score-mid";
+  return "score-low";
+}
+
+// ============================================================================
+// Lookup
+// ============================================================================
+async function runLookup() {
+  const code = document.getElementById("codeInput").value.trim();
+  if (!code) return;
+  const btn = document.getElementById("lookupBtn");
+  const resultsEl = document.getElementById("results");
+  btn.disabled = true;
+  resultsEl.innerHTML = '<div class="card loading">Looking up…</div>';
+
+  try {
+    const resp = await fetch("/api/crossover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+      throw new Error(err.detail || "Lookup failed");
+    }
+    const data = await resp.json();
+    lastResult = data;
+    addToHistory(code);
+    renderResults(data);
+  } catch (err) {
+    resultsEl.innerHTML = `<div class="error-banner">Error: ${escapeHtml(err.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ============================================================================
+// Rendering
+// ============================================================================
+function renderResults(r) {
+  const el = document.getElementById("results");
+  const parts = [];
+
+  // Decoded specs
+  if (r.decoded) {
+    parts.push(renderDecodedCard(r));
+  }
+
+  // Mapping
+  if (r.mapped_hengli_series) {
+    parts.push(renderMappingCard(r));
+  }
+
+  // Primary matches
+  if (r.primary && r.primary.length) {
+    parts.push(renderMatchesCard("Primary Hengli Candidates", r.primary, r.mapped_hengli_series));
+  }
+
+  // Fallback matches
+  if (r.fallback && r.fallback.length) {
+    parts.push(renderMatchesCard("Alternative-Series Candidates", r.fallback, null));
+  }
+
+  // Warnings
+  if (r.warnings && r.warnings.length) {
+    parts.push(renderWarningsCard(r.warnings));
+  }
+
+  // Export toolbar
+  if (r.is_valid && (r.primary.length || r.fallback.length)) {
+    parts.push(renderExportToolbar());
+  }
+
+  if (!parts.length) {
+    parts.push('<div class="empty-state">No results.</div>');
+  }
+
+  el.innerHTML = parts.join("");
+  wireExportButtons();
+  wireCopyButtons();
+}
+
+function renderDecodedCard(r) {
+  const d = r.decoded;
+  const specs = d.specs || {};
+  const keyOrder = [
+    ["displacement_cc", "Displacement", "cc/rev"],
+    ["max_pressure_bar", "Max pressure", "bar"],
+    ["max_speed_rpm", "Max speed", "rpm"],
+    ["max_flow_lpm", "Max flow", "L/min"],
+    ["max_torque_nm", "Max torque", "N·m"],
+    ["mount_pref", "Mount", ""],
+    ["shaft_pref", "Shaft type", ""],
+    ["shaft_diameter_mm", "Shaft Ø", "mm"],
+    ["port_pref", "Port", ""],
+    ["rotation", "Rotation", ""],
+  ];
+  const items = keyOrder.map(([k, label, suffix]) => {
+    const v = specs[k];
+    const display = (v === null || v === undefined || v === "") ? "—" : `${v}${suffix ? " " + suffix : ""}`;
+    return `<div class="spec-item"><span class="spec-key">${label}</span><span class="spec-val">${escapeHtml(display)}</span></div>`;
+  }).join("");
+  return `
+    <div class="card">
+      <h2>Decoded Competitor Specs</h2>
+      <div class="mapping">
+        <span class="pill">${escapeHtml(d.brand || "?")} ${escapeHtml(d.series || "")}</span>
+        <span class="pill" style="font-size:12px">${escapeHtml(d.normalised || "")}</span>
+      </div>
+      <div class="specs-grid" style="margin-top:12px">${items}</div>
+    </div>
+  `;
+}
+
+function renderMappingCard(r) {
+  return `
+    <div class="card">
+      <h2>Series Mapping</h2>
+      <div class="mapping">
+        <span class="pill">${escapeHtml(r.competitor_brand || "")} ${escapeHtml(r.competitor_series || "")}</span>
+        <span class="arrow">→</span>
+        <span class="pill hengli">Hengli ${escapeHtml(r.mapped_hengli_series)}</span>
+      </div>
+      ${r.mapping_rationale ? `<div class="rationale">${escapeHtml(r.mapping_rationale)}</div>` : ""}
+    </div>
+  `;
+}
+
+function renderMatchesCard(title, matches, mappedSeries) {
+  const cards = matches.map((m, i) => renderMatchCard(m, i + 1)).join("");
+  const sub = mappedSeries ? ` (${escapeHtml(mappedSeries)} series)` : "";
+  return `
+    <div class="card">
+      <h2>${escapeHtml(title)}${sub}</h2>
+      <div class="matches-grid">${cards}</div>
+    </div>
+  `;
+}
+
+function renderMatchCard(m, idx) {
+  const model = m.model || {};
+  const cc = m.chosen_codes || {};
+  const scoreClass = scoreBadgeClass(m.score);
+  return `
+    <div class="match-card">
+      <div class="match-header">
+        <div>
+          <div class="match-title">Candidate #${idx}</div>
+          <div class="part-number">${escapeHtml(m.part_number)}</div>
+        </div>
+        <button class="copy-btn" data-copy="${escapeHtml(m.part_number)}">Copy</button>
+      </div>
+      <div class="badge-row">
+        <span class="badge ${scoreClass}">Score ${m.score}/100</span>
+        <span class="badge fit">${escapeHtml(m.fit_rating)}</span>
+        <span class="badge fit">${escapeHtml(model.series || "")} ${escapeHtml(model.type || "")}</span>
+      </div>
+      <table class="specs-table">
+        <thead>
+          <tr><th></th><th>Cont.</th><th>Inter.</th><th>Peak</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>Displacement</th><td class="num" colspan="3">${fmt(model.displacement_cc, " cc/rev")}</td></tr>
+          <tr><th>Speed (rpm)</th><td class="num">${fmt(model.max_speed_cont)}</td><td class="num">${fmt(model.max_speed_inter)}</td><td class="num">—</td></tr>
+          <tr><th>Torque (N·m)</th><td class="num">${fmt(model.max_torque_cont)}</td><td class="num">${fmt(model.max_torque_inter)}</td><td class="num">—</td></tr>
+          <tr><th>Δp (bar)</th><td class="num">${fmt(model.max_dp_cont)}</td><td class="num">${fmt(model.max_dp_inter)}</td><td class="num">${fmt(model.max_dp_peak)}</td></tr>
+          <tr><th>Flow (L/min)</th><td class="num">${fmt(model.max_flow_cont)}</td><td class="num">${fmt(model.max_flow_inter)}</td><td class="num">—</td></tr>
+        </tbody>
+      </table>
+      <div class="codes-block">
+        <div class="code-line"><span class="k">Mount</span><span class="v">${escapeHtml(cc.mount_code || "—")} · ${escapeHtml(cc.mount_desc || "")}</span></div>
+        ${cc.port_code ? `<div class="code-line"><span class="k">Port</span><span class="v">${escapeHtml(cc.port_code)} · ${escapeHtml(cc.port_desc || "")}</span></div>` : ""}
+        <div class="code-line"><span class="k">Shaft</span><span class="v">${escapeHtml(cc.shaft_code || "—")} · ${escapeHtml(cc.shaft_desc || "")}</span></div>
+        <div class="code-line"><span class="k">Rotation</span><span class="v">${escapeHtml(cc.rotation_code || "—")}</span></div>
+      </div>
+      ${m.caveats && m.caveats.length ? `
+        <div class="caveats">
+          <strong>Caveats:</strong>
+          ${m.caveats.map(c => `<div>⚠ ${escapeHtml(c)}</div>`).join("")}
+        </div>` : ""}
+    </div>
+  `;
+}
+
+function renderWarningsCard(warnings) {
+  return `
+    <div class="card">
+      <h2>Notes &amp; Warnings</h2>
+      <div class="warning-list">
+        ${warnings.map(w => `<div>⚠ ${escapeHtml(w)}</div>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderExportToolbar() {
+  return `
+    <div class="toolbar">
+      <button class="secondary" id="exportCsvBtn">Export CSV</button>
+      <button class="secondary" id="exportJsonBtn">Export JSON</button>
+    </div>
+  `;
+}
+
+// ============================================================================
+// Copy buttons
+// ============================================================================
+function wireCopyButtons() {
+  document.querySelectorAll(".copy-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const text = btn.dataset.copy;
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = original; btn.classList.remove("copied"); }, 1500);
+      } catch {
+        // ignore
+      }
+    });
+  });
+}
+
+// ============================================================================
+// Export
+// ============================================================================
+function wireExportButtons() {
+  const csvBtn = document.getElementById("exportCsvBtn");
+  const jsonBtn = document.getElementById("exportJsonBtn");
+  if (csvBtn) csvBtn.addEventListener("click", () => exportCsv());
+  if (jsonBtn) jsonBtn.addEventListener("click", () => exportJson());
+}
+
+function exportJson() {
+  if (!lastResult) return;
+  const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/json" });
+  triggerDownload(blob, fileNameFor("json"));
+}
+
+function exportCsv() {
+  if (!lastResult) return;
+  const rows = [];
+  rows.push([
+    "Tier", "Part Number", "Series", "Frame", "Displacement (cc)",
+    "Max Δp Cont (bar)", "Max Δp Inter (bar)", "Max Δp Peak (bar)",
+    "Max Speed Cont (rpm)", "Max Torque Cont (N·m)", "Max Flow Cont (L/min)",
+    "Fit", "Score",
+    "Mount Code", "Port Code", "Shaft Code", "Rotation Code",
+    "Caveats"
+  ]);
+  const pushMatch = (tier, m) => {
+    const mdl = m.model || {};
+    const cc = m.chosen_codes || {};
+    rows.push([
+      tier, m.part_number,
+      mdl.series, mdl.type, mdl.displacement_cc,
+      mdl.max_dp_cont, mdl.max_dp_inter, mdl.max_dp_peak,
+      mdl.max_speed_cont, mdl.max_torque_cont, mdl.max_flow_cont,
+      m.fit_rating, m.score,
+      cc.mount_code, cc.port_code, cc.shaft_code, cc.rotation_code,
+      (m.caveats || []).join(" | ")
+    ]);
+  };
+  (lastResult.primary || []).forEach(m => pushMatch("PRIMARY", m));
+  (lastResult.fallback || []).forEach(m => pushMatch("ALTERNATIVE", m));
+  const csv = rows.map(r => r.map(csvCell).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  triggerDownload(blob, fileNameFor("csv"));
+}
+
+function csvCell(v) {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function fileNameFor(ext) {
+  const code = (lastResult && lastResult.raw_input) || "crossover";
+  const safe = code.replace(/[^A-Za-z0-9_-]+/g, "_");
+  const ts = new Date().toISOString().slice(0, 10);
+  return `hengli_crossover_${safe}_${ts}.${ext}`;
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ============================================================================
+// Init
+// ============================================================================
+document.getElementById("lookupBtn").addEventListener("click", runLookup);
+document.getElementById("codeInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") runLookup();
+});
+renderHistory();
+</script>
+
+</body>
+</html>
